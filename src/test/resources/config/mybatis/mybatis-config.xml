@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="callSettersOnNulls" value="true"/>
+		<setting name="mapUnderscoreToCamelCase" value="true" />
+	</settings>
+	
+	<!--mapper에서 매칭할 parmeter Type 별칭 설정-->
+	<typeAliases>
+		<typeAlias type="kr.co.cont.common.biz.base.model.BaseMap" alias="baseMap"/>
+		<typeAlias type="kr.co.cont.common.biz.base.model.BaseData" alias="baseData"/>
+	</typeAliases>
+
+</configuration>

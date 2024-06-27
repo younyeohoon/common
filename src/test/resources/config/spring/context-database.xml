@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<!-- properties파일 읽은 프로퍼티 객체, DB말고도 여러가지 작성할 거라 main에 빈등록 -->
+	<util:properties id="util" location="classpath:config/properties/${instance}/database.properties" />
+
+	<!-- ContextLoaderListenr 빈 중 DB관련 빈들 등록 -->
+	<!-- pdf 8페이지 , commons.dbcp대신 commons.dbcp2, name=" driverClassName " 띄어쓰기 
+		주의 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="#{util['jdbc.driverClassName']}" />
+		<property name="url" value="#{util['jdbc.url']}" />
+		<property name="username" value="#{util['jdbc.username']}" />
+		<property name="password" value="#{util['jdbc.password']}" />
+		<property name="defaultAutoCommit" value="#{util['jdbc.defaultAutoCommit']}" />
+	</bean>
+	
+	<!-- SqlSession setup for MyBatis Database Layer -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:config/mybatis/mybatis-config.xml" />
+		<property name="mapperLocations" value="classpath:config/mybatis/mapper/*.xml" />
+	</bean>
+	
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg ref="sqlSessionFactory" />
+	</bean>
+	
+	<bean id="sqlSessionBatch" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+		<constructor-arg index="1"  value="BATCH"/>
+	</bean>
+	
+	<!-- 트랜젝션 관리 객체 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<!-- 트랜잭션 AOP 설정 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="insert*" rollback-for="Exception" />
+			<tx:method name="update*" rollback-for="Exception" />
+			<tx:method name="delete*" rollback-for="Exception" />
+			<tx:method name="merge*" rollback-for="Exception" />
+		</tx:attributes>
+	</tx:advice>
+	
+	<aop:config>
+		<aop:pointcut id="transactionPointcut" expression="execution(* kr.co.cont..dao..*Dao.*(..))" />
+		<aop:advisor id="transactionAdvisor" pointcut-ref="transactionPointcut" advice-ref="txAdvice" />
+	</aop:config>
+	
+<!-- 	<mybatis-spring:scan base-package="kr.co.cont" annotation="org.apache.ibatis.annotations.Mapper" /> -->
+
+
+</beans>
